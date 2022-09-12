@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "instaxtractor"
+version = "0.1.0"
+description = "A small tool to extract Instagram reel media and meta data from HARs."
+authors = ["Philipp Kessling"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+click = "*"
+loguru = "*"
+PyYAML = "*"
+ujson = "*"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+pytest-cov = "*"
+black = "*"
+coverage = "*"
+pdoc3 = "*"
+pre-commit = "*"
+isort = "*"
+pylint = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--cov-report html:tests/coverage --cov=ponyexpress --capture=sys"
+
+[tool.isort]
+profile = "black"
+
+[tool.poetry.scripts]
+instaxtractor = 'instaxtractor.main:cli'
