@@ -18,7 +18,7 @@ from typing import Any, Dict
 import pytest
 import ujson
 
-from instaxtractor.extractor import MIMEType, Predicate, extract
+from instaxtractor.extract import MIMEType, Predicate, extract
 
 
 @pytest.fixture()
