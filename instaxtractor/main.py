@@ -5,7 +5,7 @@ import click
 from loguru import logger as log
 
 
-@click.command()
+@click.group()
 @click.argument("name", type=str)
 def cli(name: str) -> None:
     """This internal function is called by the click-decorated function.
@@ -30,3 +30,13 @@ def cli_implementation(name: str) -> str:
       str : Greeting
     """
     return f"Hello {name}!"
+
+
+@cli.command()
+def reels():
+    """collect reel data"""
+
+
+@cli.command()
+def posts():
+    """collect post data"""
