@@ -46,7 +46,7 @@ def har() -> Dict[str, Any]:
         (Predicate(MIMEType.JPEG, "api/v1"), "Hi, I am a JPEG."),
     ],
 )
-def test_extractor(predicate, expected):  # pylint: disable=W0621
+def test_extractor(predicate, expected):
     """The extractor takes a Dict and a predicate where we want to extract data at.
 
     Params:
