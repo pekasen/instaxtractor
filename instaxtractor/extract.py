@@ -14,17 +14,35 @@ Constants:
 
 import dataclasses
 from functools import reduce
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, Generator, List, Optional, Union
+
+from loguru import logger as log
 
 ENTRIES = ["log", "entries"]
 MIMETYPE = ["response", "content", "mimeType"]
 URL = ["request", "url"]
 
+Processor = Callable[["Predicate"], Generator]
+Accessor = Callable[[Dict[str, Any]], str]
 
-def _deep_access_(data: Dict[str, Any], path: List[str]) -> Optional[Any]:
-    def _reducer_(carry: Optional[Dict[str, Any]], key: str):
-        if carry:
-            return carry.get(key)
+
+def _deep_access_(
+    data: Dict[str, Any], path: List[Union[str, Accessor]]
+) -> Optional[Any]:
+    def _reducer_(carry: Optional[Dict[str, Any]], key: Union[str, Accessor]):
+        _key_ = None
+        if isinstance(carry, dict):
+            if isinstance(key, str):
+                _key_ = key
+            else:
+                _key_ = key(carry)
+            return carry.get(_key_)
+        if isinstance(carry, list):
+            if isinstance(key, str):
+                _key_ = key
+            else:
+                _key_ = key(carry)
+            return carry[_key_]
         return None
 
     return reduce(_reducer_, path, data)
@@ -47,6 +65,25 @@ class Predicate:
     url_fragment: Optional[str]
 
 
+class WritableType:  # pylint: disable=R0903
+    """discerns writable handlers"""
+
+    binary = "BINARY"
+    stream = "STREAM"
+    single = "SINGLE"
+
+
+@dataclasses.dataclass
+class Writable:
+    """Emissions of a processor function"""
+
+    type: str
+    content: Any
+
+    def __repr__(self) -> str:
+        return f"<Writable {self.type} {str(self.content)[:20]}>"
+
+
 def match(data: Dict[str, Any], predicate: Predicate) -> bool:
     """return whether given data object mathes the predicate
 
@@ -62,7 +99,7 @@ def match(data: Dict[str, Any], predicate: Predicate) -> bool:
     """
     if predicate.mimetype:
         v_1 = _deep_access_(data, MIMETYPE)
-        print(v_1, predicate, v_1 == predicate.mimetype)
+        log.trace(f"{v_1}, {predicate}, {v_1 == predicate.mimetype}")
         return v_1 == predicate.mimetype
     if predicate.url_fragment:
         value = _deep_access_(data, URL)
@@ -79,3 +116,8 @@ def extract(data: Dict[str, Any], predicate: Predicate) -> List[Dict[str, Any]]:
             "File does not have values at `.logs.entries`. Is it a valied HAR-file? "
         )
     return [_ for _ in entries if match(_, predicate)]
+
+
+def pluck(data: Dict[Any, Any], spec: Dict[str, List[Union[str, Accessor]]]):
+    """pluck data from a dict usign a mapping of new keys to paths"""
+    return {key: _deep_access_(data, path) for key, path in spec.items()}
