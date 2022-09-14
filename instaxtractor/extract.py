@@ -27,9 +27,7 @@ Processor = Callable[["Predicate"], Generator]
 Accessor = Callable[[Dict[str, Any]], str]
 
 
-def _deep_access_(
-    data: Dict[str, Any], path: List[Union[str, Accessor]]
-) -> Optional[Any]:
+def _deep_access_(data: Dict[str, Any], path: List) -> Optional[Any]:
     def _reducer_(carry: Optional[Dict[str, Any]], key: Union[str, Accessor]):
         _key_ = None
         if isinstance(carry, dict):
@@ -119,7 +117,7 @@ def match(data: Dict[str, Any], predicate: Predicate) -> bool:
     if predicate.mimetype is not None:
         if mimetype is None:
             return False
-        ret = mimetype == predicate.mimetype
+        ret = predicate.mimetype in mimetype
     if predicate.method is not None:
         if method is None:
             return False
@@ -145,5 +143,5 @@ def extract(data: Dict[str, Any], predicate: Predicate) -> List[Dict[str, Any]]:
 
 
 def pluck(data: Dict[Any, Any], spec: Dict[str, List[Union[str, Accessor]]]):
-    """pluck data from a dict usign a mapping of new keys to paths"""
+    """pluck data from a dict using a mapping of new keys to paths"""
     return {key: _deep_access_(data, path) for key, path in spec.items()}
