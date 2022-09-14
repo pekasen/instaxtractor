@@ -10,30 +10,13 @@ Our package should be able to retrieve data from Instagram HARs in a way that is
   we should be able to react without changing code. Thus, we should use configuration
   files to notate what to extract from where and when.
 """
-import math
-import random
+
 from pathlib import Path
-from typing import Any, Dict
 
 import pytest
 import ujson
 
-from instaxtractor.extract import MIMEType, Predicate, extract
-
-
-@pytest.fixture()
-def har() -> Dict[str, Any]:
-    """Get stub data as well as expectations.
-
-    Returns:
-        Dict[str, Any] : A HAR file
-    """
-    files = list(Path("tests/stubs").glob("*.har"))
-    #  load a random stub JSON/HAR file
-    file_number = math.floor(random.random() * (len(files) - 1))
-    #  return that to the test
-    with files[file_number].open("r", encoding="utf8") as file:
-        return ujson.load(file)
+from instaxtractor.extract import MIMEType, Predicate, extract, pluck
 
 
 @pytest.mark.parametrize(
@@ -56,3 +39,19 @@ def test_extractor(predicate, expected):
         _har = ujson.load(file)
 
     assert extract(_har, predicate)[0]["response"]["content"]["text"] == expected
+
+
+@pytest.mark.parametrize(
+    "test_input,spec,expected",
+    [
+        ({"a": {"b": 1}}, {"c": ["a", "b"]}, {"c": 1}),
+        (
+            {"a": {"b": 1, "f": 123}},
+            {"c": ["a", "b"], "g": ["a", "f"]},
+            {"c": 1, "g": 123},
+        ),
+    ],
+)
+def test_pluck(test_input, spec, expected):
+    """should extract data from the dict as specified"""
+    assert pluck(test_input, spec) == expected

@@ -34,3 +34,7 @@ profile = "black"
 
 [tool.poetry.scripts]
 instaxtractor = 'instaxtractor.main:cli'
+
+[tool.poetry.plugins.instaxtractor]
+reels = 'instaxtractor.commands.reels:reels'
+posts = 'instaxtractor.commands.posts:posts'
