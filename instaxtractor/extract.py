@@ -21,6 +21,7 @@ from loguru import logger as log
 ENTRIES = ["log", "entries"]
 MIMETYPE = ["response", "content", "mimeType"]
 URL = ["request", "url"]
+METHOD = ["request", "method"]
 
 Processor = Callable[["Predicate"], Generator]
 Accessor = Callable[[Dict[str, Any]], str]
@@ -55,6 +56,17 @@ class MIMEType:  # pylint: disable=R0903
     PNG = "image/png"
     MP4 = "video/mp4"
     JSON = "application/json"
+    JSON_UTF8 = "application/json; charset=utf-8"
+
+
+class HTTPMethod:  # pylint: disable=R0903
+    """wrapper for HTTP methods"""
+
+    GET = "GET"
+    PUT = "PUT"
+    POST = "POST"
+    OPTIONS = "OPTIONS"
+    DELETE = "DELETE"
 
 
 @dataclasses.dataclass
@@ -63,6 +75,7 @@ class Predicate:
 
     mimetype: Optional[str]
     url_fragment: Optional[str]
+    method: Optional[str]
 
 
 class WritableType:  # pylint: disable=R0903
@@ -98,16 +111,26 @@ def match(data: Dict[str, Any], predicate: Predicate) -> bool:
         bool : if the record is valied and matches the predicate, returns True
                otherwise False.
     """
-    ret = None
-    if predicate.mimetype:
-        v_1 = _deep_access_(data, MIMETYPE)
-        log.trace(f"{v_1}, {predicate}, {v_1 == predicate.mimetype}")
-        ret = v_1 == predicate.mimetype
-    if predicate.url_fragment:
-        value = _deep_access_(data, URL)
-        if value:
-            v_2 = predicate.url_fragment in value
-            ret = ret and v_2 if ret else v_2
+    ret: Optional[bool] = None
+    mimetype = _deep_access_(data, MIMETYPE)
+    url = _deep_access_(data, URL)
+    method = _deep_access_(data, METHOD)
+
+    if predicate.mimetype is not None:
+        if mimetype is None:
+            return False
+        ret = mimetype == predicate.mimetype
+    if predicate.method is not None:
+        if method is None:
+            return False
+        method_match = method == predicate.method
+        ret = method_match and ret if ret is not None else method_match
+    if predicate.url_fragment is not None:
+        if url is None:
+            return False
+        url_match = predicate.url_fragment in url
+        ret = url_match and ret if ret is not None else url_match
+    log.trace(f"{ mimetype, url, method}  {predicate} -> {ret}")
     return ret or False
 
 
