@@ -9,6 +9,7 @@ import ujson
 from loguru import logger as log
 
 from instaxtractor.extract import (
+    HTTPMethod,
     MIMEType,
     Predicate,
     Writable,
@@ -50,14 +51,19 @@ def reels(**kwargs):
 def reels_implementation(file: Dict[str, Any]) -> Generator[Writable, None, None]:
     """a recipe to extract reels media and data from a single HAR file"""
     # first order of business: get all JSON documents we'll need to process
-    docs = extract(file, Predicate(MIMEType.JSON, "api/v1/feed/"))
+    docs = extract(
+        file,
+        Predicate(
+            mimetype=MIMEType.JSON, url_fragment="api/v1/feed/", method=HTTPMethod.GET
+        ),
+    )
 
     def process_media_item(url: str):
         media_name_re = re.compile(r"(?<=\/)(\w+\.[jpegmp4]+)")
         file_name_matches = media_name_re.search(url)
         media = extract(
             file,
-            Predicate(None, url_fragment=url),
+            Predicate(mimetype=None, url_fragment=url, method=HTTPMethod.GET),
         )
         log.debug(f"Found {len(media)} matches for {url}.")
         if media and file_name_matches:

@@ -16,17 +16,17 @@ from pathlib import Path
 import pytest
 import ujson
 
-from instaxtractor.extract import MIMEType, Predicate, extract, pluck
+from instaxtractor.extract import MIMEType, Predicate, extract, match, pluck
 
 
 @pytest.mark.parametrize(
     "predicate,expected",
     [
-        (Predicate(MIMEType.JPEG, None), "Hi, I am a JPEG."),
-        (Predicate(MIMEType.MP4, None), "Hi, I am a MP4 video."),
-        (Predicate(MIMEType.JSON, None), "Hi, I am a JSON file."),
-        (Predicate(None, "api/v1"), "Hi, I am a JPEG."),
-        (Predicate(MIMEType.JPEG, "api/v1"), "Hi, I am a JPEG."),
+        (Predicate(MIMEType.JPEG, None, None), "Hi, I am a JPEG."),
+        (Predicate(MIMEType.MP4, None, None), "Hi, I am a MP4 video."),
+        (Predicate(MIMEType.JSON, None, None), "Hi, I am a JSON file."),
+        (Predicate(None, "api/v1", None), "Hi, I am a JPEG."),
+        (Predicate(MIMEType.JPEG, "api/v1", None), "Hi, I am a JPEG."),
     ],
 )
 def test_extractor(predicate, expected):
@@ -55,3 +55,75 @@ def test_extractor(predicate, expected):
 def test_pluck(test_input, spec, expected):
     """should extract data from the dict as specified"""
     assert pluck(test_input, spec) == expected
+
+
+@pytest.mark.parametrize(
+    "test_input,predicate,expected",
+    [
+        (
+            {"response": {"content": {"mimeType": "image/jpeg"}}},
+            Predicate(MIMEType.JPEG, None, None),
+            True,
+        ),
+        (
+            {"response": {"content": {"mimeType": "image/jpeg"}}},
+            Predicate(MIMEType.MP4, None, None),
+            False,
+        ),
+        (
+            {"response": {"content": {"mimeType": "image/jpeg"}}},
+            Predicate(None, None, None),
+            False,
+        ),
+        (
+            {"response": {"content": {"mimeType": "video/mp4"}}},
+            Predicate(MIMEType.JPEG, None, None),
+            False,
+        ),
+        (
+            {"request": {"url": "https://www.test.com"}},
+            Predicate(None, "test.com", None),
+            True,
+        ),
+        (
+            {
+                "request": {"url": "https://www.test.com"},
+                "response": {"content": {"mimeType": "image/jpeg"}},
+            },
+            Predicate(None, "test.com", None),
+            True,
+        ),
+        (
+            {
+                "request": {"url": "https://www.test.com"},
+                "response": {"content": {"mimeType": "image/jpeg"}},
+            },
+            Predicate(MIMEType.JPEG, "test.com", None),
+            True,
+        ),
+        (
+            {
+                "request": {"url": "https://www.test.com"},
+                "response": {"content": {"mimeType": "image/jpeg"}},
+            },
+            Predicate(MIMEType.MP4, "test.com", None),
+            False,
+        ),
+        (
+            {
+                "request": {"url": "https://www.test.com"},
+                "response": {"content": {"mimeType": "application/json"}},
+            },
+            Predicate(MIMEType.MP4, "test.com", None),
+            False,
+        ),
+        (
+            {"response": {"content": {"mimeType": "image/jpeg"}}},
+            Predicate(MIMEType.JPEG, "/api/v1/feed/", None),
+            False,
+        ),
+    ],
+)
+def test_match(test_input, predicate, expected):
+    """should return bool if the record matches the predicate"""
+    assert match(test_input, predicate) == expected
