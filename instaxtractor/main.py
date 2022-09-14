@@ -6,6 +6,7 @@ Constants:
 
 """
 
+import base64
 import sys
 from pathlib import Path
 from typing import List
@@ -15,7 +16,7 @@ import importlib_metadata as imd
 import ujson
 from loguru import logger as log
 
-from instaxtractor.extract import Processor
+from instaxtractor.extract import Processor, Writable
 
 log_levels = {0: "ERROR", 1: "WARNING", 2: "INFO", 3: "DEBUG", 4: "TRACE"}
 
@@ -72,9 +73,21 @@ def process_hars(
         for processor in processors:
             if processor:
                 for _ in processor(data):
+                    _handle_stream_(_, output)
                     log.debug(_)
             else:
                 log.warning("Undefined processor, skipping!")
+
+
+def _handle_stream_(item: Writable, output: str) -> None:
+    if item.type == "BINARY":
+        byte_data = base64.b64decode(item.content)
+        with (Path(output) / item.sink).open("w+b") as file:
+            file.write(byte_data)
+    if item.type == "STREAM":
+        with (Path(output) / item.sink).open("a") as file:
+            ujson.dump(item.content, file)
+            file.write("\n")
 
 
 def _register_plugins_():

@@ -79,13 +79,14 @@ class Writable:
 
     type: str
     content: Any
+    sink: str
 
     def __repr__(self) -> str:
-        return f"<Writable {self.type} {str(self.content)[:20]}>"
+        return f"<Writable::{self.type} {str(self.content)[:20]} ->{self.sink}>"
 
 
 def match(data: Dict[str, Any], predicate: Predicate) -> bool:
-    """return whether given data object mathes the predicate
+    """return whether given data object matches the predicate
 
     Params:
         data : Dict[str, Any]
@@ -97,15 +98,17 @@ def match(data: Dict[str, Any], predicate: Predicate) -> bool:
         bool : if the record is valied and matches the predicate, returns True
                otherwise False.
     """
+    ret = None
     if predicate.mimetype:
         v_1 = _deep_access_(data, MIMETYPE)
         log.trace(f"{v_1}, {predicate}, {v_1 == predicate.mimetype}")
-        return v_1 == predicate.mimetype
+        ret = v_1 == predicate.mimetype
     if predicate.url_fragment:
         value = _deep_access_(data, URL)
         if value:
-            return predicate.url_fragment in value
-    return False
+            v_2 = predicate.url_fragment in value
+            ret = ret and v_2 if ret else v_2
+    return ret or False
 
 
 def extract(data: Dict[str, Any], predicate: Predicate) -> List[Dict[str, Any]]:

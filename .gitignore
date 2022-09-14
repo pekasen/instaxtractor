@@ -132,4 +132,4 @@ dmypy.json
 .vscode/
 
 # live testing data
-tests/stub/live_*.har
+tests/stub/live.*.har
