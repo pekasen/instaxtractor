@@ -1,4 +1,4 @@
-"""main business logic for extracting content
+"""Main business logic for extracting content.
 
 Constants:
 
@@ -48,7 +48,7 @@ def _deep_access_(data: Dict[str, Any], path: List) -> Optional[Any]:
 
 
 class MIMEType:  # pylint: disable=R0903
-    """Wrapper for MIMETypes"""
+    """Wrapper for MIMETypes."""
 
     JPEG = "image/jpeg"
     PNG = "image/png"
@@ -58,7 +58,7 @@ class MIMEType:  # pylint: disable=R0903
 
 
 class HTTPMethod:  # pylint: disable=R0903
-    """wrapper for HTTP methods"""
+    """wrapper for HTTP methods."""
 
     GET = "GET"
     PUT = "PUT"
@@ -69,7 +69,7 @@ class HTTPMethod:  # pylint: disable=R0903
 
 @dataclasses.dataclass
 class Predicate:
-    """Formulates a query against the HAR data structure"""
+    """Formulates a query against the HAR data structure."""
 
     mimetype: Optional[str]
     url_fragment: Optional[str]
@@ -77,7 +77,7 @@ class Predicate:
 
 
 class WritableType:  # pylint: disable=R0903
-    """discerns writable handlers"""
+    """Discerns writable handlers."""
 
     binary = "BINARY"
     stream = "STREAM"
@@ -86,18 +86,19 @@ class WritableType:  # pylint: disable=R0903
 
 @dataclasses.dataclass
 class Writable:
-    """Emissions of a processor function"""
+    """Emissions of a processor function."""
 
     type: str
     content: Any
     sink: str
 
     def __repr__(self) -> str:
+        """Return string representation of the Writer instance."""
         return f"<Writable::{self.type} {str(self.content)[:20]} ->{self.sink}>"
 
 
 def match(data: Dict[str, Any], predicate: Predicate) -> bool:
-    """return whether given data object matches the predicate
+    """Return whether given data object matches the predicate.
 
     Params:
         data : Dict[str, Any]
@@ -133,7 +134,7 @@ def match(data: Dict[str, Any], predicate: Predicate) -> bool:
 
 
 def extract(data: Dict[str, Any], predicate: Predicate) -> List[Dict[str, Any]]:
-    """accessess the HARs log entries and extracts all matching records"""
+    """Accessess the HARs log entries and extracts all matching records."""
     entries = _deep_access_(data, ENTRIES)
     if not entries:
         raise ValueError(
@@ -142,6 +143,6 @@ def extract(data: Dict[str, Any], predicate: Predicate) -> List[Dict[str, Any]]:
     return [_ for _ in entries if match(_, predicate)]
 
 
-def pluck(data: Dict[Any, Any], spec: Dict[str, List[Union[str, Accessor]]]):
-    """pluck data from a dict using a mapping of new keys to paths"""
+def pluck(data: Dict[Any, Any], spec: Dict[str, List]):
+    """Pluck data from a dict using a mapping of new keys to paths."""
     return {key: _deep_access_(data, path) for key, path in spec.items()}
