@@ -33,3 +33,10 @@ repos:
         entry: poetry run pylint -j 0
         types: ['python']
         language: system
+-   repo: local
+    hooks:
+    -   id: system
+        name: Pydocstyle
+        entry: poetry run pydocstyle --convention=google
+        types: ['python']
+        language: system
