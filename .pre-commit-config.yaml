@@ -33,3 +33,8 @@ repos:
         entry: poetry run pylint -j 0
         types: ['python']
         language: system
+-   repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.1.1
+    hooks:
+    -   id: pydocstyle
+        args: [--convention=google]
