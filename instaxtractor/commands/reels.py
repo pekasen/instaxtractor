@@ -20,7 +20,7 @@ from instaxtractor.extract import (
 metadata_spec = {
     "id": ["id"],
     "taken_at": ["taken_at"],
-    "user": ["user"],
+    # "user": ["user"],  # the user objectto be included is found at another leevl
     "caption": ["accessibility_caption"],
     "media_url": ["image_versions2", "candidates"],
     "video_url": [
@@ -46,7 +46,7 @@ def reels_implementation(file: Dict[str, Any]) -> Generator[Writable, None, None
         ),
     )
 
-    def process_media_item(candidates: List[Any]):
+    def process_media_item(candidates: List[Any], user_id: str):
         for candidate in candidates:
             if "url" in candidate:
                 url = candidate["url"]
@@ -66,25 +66,28 @@ def reels_implementation(file: Dict[str, Any]) -> Generator[Writable, None, None
                         log.critical("Did not find what you were looking for.")
                         return
                     file_name = file_name_matches.group(1)
-                    yield Writable(WritableType.binary, image, f"{file_name}")
+                    yield Writable(WritableType.binary, image, f"{user_id}/{file_name}")
                     break  # break the loop so we only emit the largest file we've found
 
-    def process_item(reel_items, user_id: str):
+    def process_item(reel_items, user_id: str, user_dict: Dict[str, Any]):
         for item in reel_items:
-            metadata = pluck(item, metadata_spec)
+            metadata = {**pluck(item, metadata_spec), "user": user_dict}
+
             log.debug(f"Metadata parsed: {metadata}")
-            yield Writable(WritableType.stream, metadata, f"{user_id}.jsonl")
+
+            yield Writable(WritableType.stream, metadata, f"{user_id}/{user_id}.jsonl")
 
             if metadata["media_url"]:
-                yield from process_media_item(metadata["media_url"])
+                yield from process_media_item(metadata["media_url"], user_id)
             if metadata["video_url"]:
-                yield from process_media_item(metadata["video_url"])
+                yield from process_media_item(metadata["video_url"], user_id)
 
     def process_users(user_reel: Dict[str, Any]):
         for user_id, payload in user_reel.items():
             reel_items = payload.get("items")
-            if reel_items:
-                yield from process_item(reel_items, user_id)
+            user_dict = payload.get("user")
+            if reel_items and user_dict:
+                yield from process_item(reel_items, user_id, user_dict)
 
     def process_docs(docs: List[Dict[str, Any]]):
         for doc in docs:
