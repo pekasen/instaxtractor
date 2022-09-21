@@ -1,4 +1,4 @@
-"""Main Module for INSTAXTRACTOR
+"""Main Module for INSTAXTRACTOR.
 
 Constants:
 
@@ -39,8 +39,7 @@ def cli(
     input: str,  # pylint: disable=W0622,W0613
     output: str,  # pylint: disable=W0613
 ) -> None:
-    """iNsTa-X-TrAcToR"""
-
+    """iNsTa-X-TrAcToR."""
     # We use this function to setup our logging
     log.remove()  # remove all default loggers
     # and set the logging level according to user input
@@ -57,7 +56,7 @@ def process_hars(
     input: str,  # pylint: disable=W0622
     output: str,
 ):
-    """processor callback"""
+    """Processor callback."""
     log.debug(
         f"""Starting instaxtractor with the following parameter:
     processors: {processors},
@@ -79,13 +78,19 @@ def process_hars(
                 log.warning("Undefined processor, skipping!")
 
 
-def _handle_stream_(item: Writable, output: str) -> None:
+def _handle_stream_(item: Writable, output_dir: str) -> None:
+    _output = Path(output_dir)
+    output_path = _output / item.sink
+
+    if output_path.parent != _output:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
     if item.type == "BINARY":
         byte_data = base64.b64decode(item.content)
-        with (Path(output) / item.sink).open("w+b") as file:
+        with output_path.open("w+b") as file:
             file.write(byte_data)
     if item.type == "STREAM":
-        with (Path(output) / item.sink).open("a") as file:
+        with output_path.open("a") as file:
             ujson.dump(item.content, file)
             file.write("\n")
 
